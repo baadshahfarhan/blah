@@ -28,17 +28,17 @@ do
     
 	if [[ "$SourceCodeFile" == aura/* ]]
 	then
-    	cp -pvf --parents "${SourceCodeFile%/*}"/*.* ../DeployFolder/	
+    	cp -pvfr --parents "${SourceCodeFile%/*}"/*.* ../DeployFolder/	
 
     elif [[ "$SourceCodeFile" == *-meta.xml ]]
 	then
-    	cp -pvf --parents "$SourceCodeFile" ../DeployFolder/
-        cp -pvf --parents "${SourceCodeFile/%-meta.xml/}" ../DeployFolder/ 	
+    	cp -pvfr --parents "$SourceCodeFile" ../DeployFolder/
+        cp -pvfr --parents "${SourceCodeFile/%-meta.xml/}" ../DeployFolder/ 	
 
     elif [[ "$SourceCodeFile" != "package.xml" ]] && [[ "$SourceCodeFile" != ".gitignore" ]]
 	then
-    	cp -pvf --parents "$SourceCodeFile" ../DeployFolder/
-        cp -pvf --parents "$SourceCodeFile-meta.xml" ../DeployFolder/ 2>/dev/null || :
+    	cp -pvfr --parents "$SourceCodeFile" ../DeployFolder/
+        cp -pvfr --parents "$SourceCodeFile-meta.xml" ../DeployFolder/ 2>/dev/null || :
     fi    
 
 done
