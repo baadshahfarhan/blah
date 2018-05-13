@@ -1,0 +1,78 @@
+rm -rf DeployFolder
+mkdir DeployFolder
+mkdir DeployFolder/src
+cd FullRepositoryContents
+
+git checkout origin/$TARGETBRANCH
+
+git checkout origin/pull-requests-merge/$PULLREQUESTID
+latestCommit=`git log -n 1 --skip 1 --pretty=format:"%H"`
+echo "$latestCommit" > ../latestCommit.txt
+
+curl -XPOST -H "Authorization: Basic a2FyaW1mOlNBbG1vbmx5bng3NSE=" -H "Content-Type: application/json" https://bitbucket.aws.baxter.com/rest/build-status/1.0/commits/$latestCommit -d "{
+  \"state\": \"FAILED\",
+  \"key\": \"Pull Request Deployment Validation \r\r Target Branch: $TARGETBRANCH \r\r Username: $USERNAME\",
+  \"description\": \"The validation deployment is currently running or has failed! \r\r Target Branch: $TARGETBRANCH \r\r Username: $USERNAME\",
+  \"name\": \"Pull Request Deployment Validation \r\r Target Branch: $TARGETBRANCH \r\r Username: $USERNAME\",
+  \"url\": \"http://euaiptools:8085/job/Pull%20Request%20Deployment%20Validation/\"
+}"
+
+base=`git merge-base origin/$TARGETBRANCH HEAD`
+
+echo $(git diff --name-only $base HEAD | sort | uniq)
+
+OIFS="$IFS"
+IFS=$'\n'
+for SourceCodeFile in $(git diff --name-only $base HEAD | sort | uniq)
+do
+    
+	if [[ "$SourceCodeFile" == aura/* ]]
+	then
+    	cp -pvf --parents "${SourceCodeFile%/*}"/*.* ../DeployFolder/	
+
+    elif [[ "$SourceCodeFile" == *-meta.xml ]]
+	then
+    	cp -pvf --parents "$SourceCodeFile" ../DeployFolder/
+        cp -pvf --parents "${SourceCodeFile/%-meta.xml/}" ../DeployFolder/ 	
+
+    elif [[ "$SourceCodeFile" != "package.xml" ]] && [[ "$SourceCodeFile" != ".gitignore" ]]
+	then
+    	cp -pvf --parents "$SourceCodeFile" ../DeployFolder/
+        cp -pvf --parents "$SourceCodeFile-meta.xml" ../DeployFolder/ 2>/dev/null || :
+    fi    
+
+done
+IFS="$OIFS"
+
+cp -f src/package.xml ../DeployFolder/src/package.xml
+cd ..
+
+if [[ -d "DeployFolder/src/classes" ]] || [[ -d "DeployFolder/src/triggers" ]]
+then
+	buildFileContents=""
+    cp -f build_SpecifiedUnitTests.xml build.xml
+    
+    for file in $(find DeployFolder -type f -name "*.cls" -o -name "*.trigger")
+    do
+    	componentName=${file/'DeployFolder/src/classes/'/}
+    	componentName=${componentName/'DeployFolder/src/triggers/'/}
+    	componentName=${componentName/'.cls'/}
+    	componentName=${componentName/'.trigger'/}
+        
+        buildFileContents+="<runTest>${componentName}</runTest>"
+        buildFileContents+="<runTest>Test${componentName}</runTest>"
+        buildFileContents+="<runTest>Test_${componentName}</runTest>"
+        buildFileContents+="<runTest>${componentName}Test</runTest>"
+        buildFileContents+="<runTest>${componentName}_Test</runTest>"
+        buildFileContents+="<runTest>Tests${componentName}</runTest>"
+        buildFileContents+="<runTest>Tests_${componentName}</runTest>"
+        buildFileContents+="<runTest>${componentName}Tests</runTest>"
+        buildFileContents+="<runTest>${componentName}_Tests</runTest>"
+    done
+    
+    buildFileContents+="</sf:deploy></target></project>"
+    echo "$buildFileContents" >> build.xml
+
+else
+	cp -f build_NoUnitTests.xml build.xml	
+fi
