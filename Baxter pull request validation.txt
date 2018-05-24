@@ -14,7 +14,7 @@ curl -XPOST -H "Authorization: Basic a2FyaW1mOlNBbG1vbmx5bng3NSE=" -H "Content-T
   \"key\": \"Pull Request Deployment Validation \r\r Target Branch: $TARGETBRANCH \r\r Username: $USERNAME\",
   \"description\": \"The validation deployment is currently running or has failed! \r\r Target Branch: $TARGETBRANCH \r\r Username: $USERNAME\",
   \"name\": \"Pull Request Deployment Validation \r\r Target Branch: $TARGETBRANCH \r\r Username: $USERNAME\",
-  \"url\": \"http://euaiptools:8085/job/Pull%20Request%20Deployment%20Validation/\"
+  \"url\": \"$BUILD_URL\"
 }"
 
 base=`git merge-base origin/$TARGETBRANCH HEAD`
@@ -26,7 +26,7 @@ IFS=$'\n'
 for SourceCodeFile in $(git diff --name-only $base HEAD | sort | uniq)
 do
     
-	if [[ "$SourceCodeFile" == aura/* ]]
+	if [[ "$SourceCodeFile" == src/aura/* ]]
 	then
     	cp -pvfr --parents "${SourceCodeFile%/*}"/*.* ../DeployFolder/	
 
