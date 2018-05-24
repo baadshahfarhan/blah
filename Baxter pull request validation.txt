@@ -37,7 +37,7 @@ do
 
     elif [[ "$SourceCodeFile" != "package.xml" ]] && [[ "$SourceCodeFile" != ".gitignore" ]]
 	then
-    	cp -pvfr --parents "$SourceCodeFile" ../DeployFolder/
+    	cp -pvfr --parents "$SourceCodeFile" ../DeployFolder/ 2>/dev/null || :
         cp -pvfr --parents "$SourceCodeFile-meta.xml" ../DeployFolder/ 2>/dev/null || :
     fi    
 
